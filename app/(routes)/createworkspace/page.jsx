@@ -7,34 +7,52 @@ import { Input } from "@/components/ui/input";
 import { db } from "@/config/firebaseConfig";
 import { useAuth, useUser } from "@clerk/nextjs";
 import { doc, setDoc } from "firebase/firestore";
-import { SmilePlus } from "lucide-react";
+import { Loader2Icon, SmilePlus } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import React, { useState } from "react";
+import uuid4 from "uuid4";
 
 function CreateWorkspace() {
   const [coverImage, setCoverImage] = useState("/cover.png");
-  const [workspaceName, setWorkspaceName] = useState();
-  const [emoji, setEmoji] = useState();
-  const {user} =useUser();
-  const {orgId}=useAuth();
-  const [loading,setLoading]=useState(false);
-  const OnCreateWorkspace=async()=>{
+  const [workspaceName, setWorkspaceName] = useState("");
+  const [emoji, setEmoji] = useState("");
+  const { user } = useUser();
+  const { orgId } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  const onCreateWorkspace = async () => {
     setLoading(true);
-    const docId = Date.now();
-    const result = await setDoc(doc(db,'Workspace',docId.toString()),{
-      workspaceName:workspaceName,
-      emoji:emoji,
-      coverImage:coverImage,
-      createdBy:user?.primaryEmailAddress?.emailAddress,
-      id:docId,
-      orgId:orgId?orgId:user?.primaryEmailAddress?.emailAddress,
+    const workspaceId = Date.now().toString();
+    await setDoc(doc(db, "Workspace", workspaceId), {
+      workspaceName: workspaceName,
+      emoji: emoji,
+      coverImage: coverImage,
+      createdBy: user?.primaryEmailAddress?.emailAddress,
+      id: workspaceId,
+      orgId: orgId || user?.primaryEmailAddress?.emailAddress,
+    });
+    const docId = uuid4();
+    await setDoc(doc(db, "workspaceDocuments", docId.toString()), {
+      workspaceId: workspaceId,
+      createdBy: user?.primaryEmailAddress?.emailAddress,
+      coverImage:null,
+      emoji:null,
+      id: docId,
+      documentOutput:[],
+    });
+    await setDoc(doc(db,'documentOutput',docId.toString()),{
+      documentId:docId,
+      documentOutput:[]
     });
     setLoading(false);
-  }
+    router.replace("/workspace/" + workspaceId+"/"+docId);
+  };
 
   return (
-    <div className="p-10 md:px-36 lg:px-64 xl:pg-96 py-28">
-      <div className="shadow-2xl round-xl">
+    <div className="p-10 md:px-36 lg:px-64 xl:px-96 py-28">
+      <div className="shadow-2xl rounded-xl">
         <CoverPicker setNewCover={(v) => setCoverImage(v)}>
           <div className="relative group cursor-pointer">
             <h2 className="hidden absolute p-4 w-full h-full items-center justify-center group-hover:flex">
@@ -43,7 +61,7 @@ function CreateWorkspace() {
             <div className="group-hover:opacity-40">
               <Image
                 src={coverImage}
-                alt=""
+                alt="Cover Image"
                 height={400}
                 width={400}
                 className="w-full h-[180px] object-cover rounded-t-xl"
@@ -56,7 +74,7 @@ function CreateWorkspace() {
           <h2 className="mt-2 text-sm">Create a new workspace</h2>
           <div className="mt-8 flex gap-2 items-center">
             <EmojiPickerComponent setEmojiIcon={(v) => setEmoji(v)}>
-              <Button variant="outline">{emoji ? emoji : <SmilePlus />}</Button>
+              <Button variant="outline">{emoji || <SmilePlus />}</Button>
             </EmojiPickerComponent>
             <Input
               placeholder="Workspace Name"
@@ -64,7 +82,12 @@ function CreateWorkspace() {
             />
           </div>
           <div className="flex gap-6 justify-end mt-10">
-            <Button disabled={!workspaceName?.length} onChange={CreateWorkspace}>Create</Button>
+            <Button
+              disabled={!workspaceName.length || loading}
+              onClick={onCreateWorkspace}
+            >
+              Create {loading && <Loader2Icon className="animate-spin ml-2" />}
+            </Button>
             <Button variant="destructive">Cancel</Button>
           </div>
         </div>
