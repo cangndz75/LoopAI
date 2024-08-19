@@ -22,34 +22,36 @@ function CreateWorkspace() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const onCreateWorkspace = async () => {
+  const OnCreateWorkspace=async()=>{
     setLoading(true);
-    const workspaceId = Date.now().toString();
-    await setDoc(doc(db, "Workspace", workspaceId), {
-      workspaceName: workspaceName,
-      emoji: emoji,
-      coverImage: coverImage,
-      createdBy: user?.primaryEmailAddress?.emailAddress,
-      id: workspaceId,
-      orgId: orgId || user?.primaryEmailAddress?.emailAddress,
+    const workspaceId=Date.now();
+    const result=await setDoc(doc(db,'Workspace',workspaceId.toString()),{
+        workspaceName:workspaceName,
+        emoji:emoji,
+        coverImage:coverImage,
+        createdBy:user?.primaryEmailAddress?.emailAddress,
+        id:workspaceId,
+        orgId:orgId?orgId:user?.primaryEmailAddress?.emailAddress
     });
-    const docId = uuid4();
-    await setDoc(doc(db, "workspaceDocuments", docId.toString()), {
-      workspaceId: workspaceId,
-      createdBy: user?.primaryEmailAddress?.emailAddress,
-      coverImage:null,
-      emoji:null,
-      id: docId,
-      documentOutput:[],
-    });
-    await setDoc(doc(db,'documentOutput',docId.toString()),{
-      documentId:docId,
-      documentOutput:[]
-    });
-    setLoading(false);
-    router.replace("/workspace/" + workspaceId+"/"+docId);
-  };
 
+    const docId=uuid4();
+    await setDoc(doc(db,'workspaceDocuments',docId.toString()),{
+        workspaceId:workspaceId,
+        createdBy:user?.primaryEmailAddress?.emailAddress,
+        coverImage:null,
+        emoji:null,
+        id:docId,
+        documentName:'Untitled Document',
+        documentOutput:[]
+    })
+
+    await setDoc(doc(db,'documentOutput',docId.toString()),{
+        docId:docId,
+        output:[]
+    })
+    setLoading(false);
+    router.replace('/workspace/'+workspaceId+"/"+docId);
+  }
   return (
     <div className="p-10 md:px-36 lg:px-64 xl:px-96 py-28">
       <div className="shadow-2xl rounded-xl">
@@ -84,7 +86,7 @@ function CreateWorkspace() {
           <div className="flex gap-6 justify-end mt-10">
             <Button
               disabled={!workspaceName.length || loading}
-              onClick={onCreateWorkspace}
+              onClick={OnCreateWorkspace}
             >
               Create {loading && <Loader2Icon className="animate-spin ml-2" />}
             </Button>

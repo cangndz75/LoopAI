@@ -1,8 +1,16 @@
 import React from 'react'
+import SideNav from '../../_components/SideNav'
 
-function WorkspaceDocument() {
+function WorkspaceDocument({params}) {
   return (
-    <div>WorkspaceDocument</div>
+    <div>
+        <div className=''>
+            <SideNav params={params} />
+        </div>
+        <div className='md:ml-72'>
+            Document
+        </div>
+    </div>
   )
 }
 
